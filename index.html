@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Store</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <div class="scroll-bg"></div>
+
+    <button class="cart-btn"><img src="images/cart.svg" alt="">Cart</button>
+    <div class="cart">
+        <ul class="cart-items"></ul>
+        <button class="qr-btn">Generate QR Code</button>
+        <div id="qr-code"></div>
+    </div>
+
+    <div class="container">
+        <div class="user"></div>
+        <div class="loader"></div>
+    </div>
+
+    <script>
+        const user = document.querySelector('.user');
+        const cartBtn = document.querySelector('.cart-btn');
+        const cart = document.querySelector('.cart');
+        const cartItems = document.querySelector('.cart-items');
+        const qrBtn = document.querySelector('.qr-btn');
+        const qrCode = document.querySelector('#qr-code');
+
+        let cartList = [];
+
+        async function info() {
+            try {
+                let link = await fetch('https://dummyjson.com/products');
+                let data = await link.json();
+                data.products.forEach((el) => {
+                    let item = document.createElement('div');
+                    item.classList.add('item');
+
+                    let title = document.createElement('h2');
+                    let description = document.createElement('p');
+                    let price = document.createElement('h3');
+                    let img = document.createElement('img');
+                    let addToCartBtn = document.createElement('button');
+
+                    title.textContent = el.title;
+                    description.textContent = el.description;
+                    price.textContent = `$${el.price}`;
+                    img.src = el.thumbnail;
+
+                    addToCartBtn.textContent = 'Add to Cart';
+                    addToCartBtn.classList.add('add-to-cart');
+                    addToCartBtn.addEventListener('click', () => addToCart(el));
+
+                    item.append(img);
+                    item.append(title);
+                    item.append(description);
+                    item.append(price);
+                    item.append(addToCartBtn);
+
+                    user.append(item);
+                });
+            } catch (error) {
+                console.error('Ошибка при получении данных');
+            }
+        }
+
+        function addToCart(product) {
+            cartList.push(product);
+            renderCart();
+        }
+
+        function renderCart() {
+            cartItems.innerHTML = '';
+            cartList.forEach(product => {
+                let cartItem = document.createElement('li');
+                cartItem.textContent = `${product.title} - $${product.price}`;
+                cartItems.appendChild(cartItem);
+            });
+        }
+
+        cartBtn.addEventListener('click', () => {
+            cart.style.display = cart.style.display === 'block' ? 'none' : 'block';
+        });
+
+        qrBtn.addEventListener('click', () => {
+            if (cartList.length > 0) {
+                generateQRCode();
+            } else {
+                qrCode.innerHTML = 'Cart is empty!';
+            }
+        });
+        function addToCart(product) {
+           
+            let existingProduct = cartList.find(item => item.id === product.id);
+
+            if (existingProduct) {
+           
+                existingProduct.quantity += 1;
+            } else {
+                
+                product.quantity = 1;
+                cartList.push(product);
+            }
+
+            renderCart();
+        }
+
+        function renderCart() {
+            cartItems.innerHTML = '';
+            let totalAmount = 0;
+
+            cartList.forEach(product => {
+                let cartItem = document.createElement('li');
+                cartItem.textContent = `${product.title} (x${product.quantity}) - $${product.price * product.quantity}`;
+                cartItems.appendChild(cartItem);
+
+               
+                totalAmount += product.price * product.quantity;
+            });
+
+           
+            let totalItem = document.createElement('li');
+            totalItem.textContent = `Total: $${totalAmount}`;
+            cartItems.appendChild(totalItem);
+        }
+
+
+        function generateQRCode() {
+            let qrValue = cartList.map(item => item.title).join(', ');
+            let qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrValue)}`;
+            qrCode.innerHTML = `<img src="${qrApi}" alt="QR Code">`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => info());
+
+        window.addEventListener("load", function() {
+    setTimeout(function() {
+        document.body.classList.add("loaded");
+    }, 5000); 
+});
+
+    </script>
+</body>
+
+</html>
